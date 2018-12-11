@@ -1,0 +1,112 @@
+---
+title: "assignment-3"
+author: "Océane Gagner"
+output: html_document
+---
+
+
+```{r}
+#devtools::install_github("ewan/stats_course", subdir="data/clark_judgments")
+clark_data <- dplyr::filter(clarkjudgments::acceptability, MOP=="MOP100")
+library(magrittr)
+source("functions.R")
+```
+
+#Question 1
+
+```{r}
+ggplot2::ggplot(clark_data, ggplot2::aes(x=rating, fill=language)) + ggplot2::geom_histogram(binwidth = 5) 
+
+clark_data_bin <- dplyr::mutate(clark_data, language_bin = ifelse(language == "adger-good", 1, 0))
+
+lm_bin = lm(rating ~ language_bin, data = clark_data_bin)
+
+ggplot2::ggplot(clark_data_bin, ggplot2::aes(y=rating, x=language_bin)) + ggplot2::geom_point() + ggplot2::geom_abline(intercept = coef(lm_bin)[1], slope = coef(lm_bin)[2], color="chartreuse4")
+```
+
+Le problème de ces données est que, pour pouvoir utiliser un modèle linéaire avec erreur Gaussienne, elles devraient être distribuées selon une loi normale, ce qui, selon le 1e graphique n'apparait pas, et qui est par ailleurs confirmé par le 2e qui montre des écarts différents et une répartition inversée en fonction de la langue.
+
+
+#Question 2
+
+```{r}
+clark_good <- dplyr::filter(clark_data, language=="adger-good")
+clark_bad  <- dplyr::filter(clark_data, language=="adger-bad")
+clark_good_sum <- dplyr::summarise(clark_good, total=n(), mean=mean(rating), sd=sd(rating)) 
+clark_bad_sum  <- dplyr::summarise(clark_bad, total=n(), mean=mean(rating), sd=sd(rating))
+```
+
+
+```{r}
+#Under the first hypothesis, there is no difference in the means of the distributions between the two groups. 
+
+hypot1 <- hyp1(clark_good_sum, clark_bad_sum)
+
+#Under the second, the difference in the means of the distributions between the two groups is the same as the difference in the means of the two groups as observed in the data
+
+hypot2 <- hyp2(clark_good_sum, clark_bad_sum)
+
+ggplot2::ggplot(hypot1, 
+                ggplot2::aes(x = coef)) + 
+                ggplot2::geom_histogram(binwidth = 0.2,
+                                        alpha=0.2,
+                                        col="chartreuse4", fill="deepskyblue3")
+                ggplot2::geom_vline(xintercept=mean(hypot1$coef), size=0.2)
+                           
+ggplot2::ggplot(hypot2, 
+                ggplot2::aes(x = coef)) + 
+                ggplot2::geom_histogram(binwidth = 0.2,
+                                        alpha=0.2,
+                                        col="deepskyblue3", fill="chartreuse4") 
+                ggplot2::geom_vline(xintercept=mean(hypot2$coef), size=0.2)
+```
+
+
+```{r}
+hypot1_2 <- hyp1_2(clark_good_sum, clark_bad_sum)
+hypot2_2 <- hyp2_2(clark_good_sum, clark_bad_sum)
+
+
+ggplot2::ggplot(NULL,
+                ggplot2::aes(x = coef)) +
+                ggplot2::geom_histogram(data=hypot1_2,
+                                        binwidth = 0.2,
+                                        alpha = 0.2,
+                                        col="chartreuse4", fill="deepskyblue3") +
+                ggplot2::geom_vline(xintercept=mean(hypot1_2$coef), show.legend = T, size = 1) +
+                ggplot2::geom_histogram(data=hypot2_2,
+                                        binwidth = 0.2,
+                                        alpha=0.2,
+                                        col="deepskyblue3", fill="chartreuse4") +
+                ggplot2::geom_vline(xintercept=mean(hypot2_2$coef), show.legend = T, size = 1)
+```
+
+
+On peut voir qu'après avoir réduit la dispersion de l'échantillon de [0;100], on obtient une loi normale sur les données, ce qui nous montre la différence avec les données de la première question.
+
+
+#Question 3
+
+```{r}
+#Under the first hypothesis, there is no difference in the means of the distributions between the two groups. 
+
+hypot1 <- hyp1(clark_good_sum, clark_bad_sum)
+
+#Under the second, the difference in the means of the distributions between the two groups is the same as the difference in the means of the two groups as observed in the data
+
+hypot2 <- hyp2(clark_good_sum, clark_bad_sum)
+
+ggplot2::ggplot(NULL, 
+                ggplot2::aes(x = coef)) + 
+                ggplot2::geom_histogram(binwidth = 0.2,
+                                        alpha=0.2,
+                                        col="chartreuse4", fill="deepskyblue3")
+                ggplot2::geom_vline(xintercept=mean(hypot1$coef), size=0.2)
++ 
+                ggplot2::geom_histogram(binwidth = 0.2,
+                                        alpha=0.2,
+                                        col="deepskyblue3", fill="chartreuse4") 
+                ggplot2::geom_vline(xintercept=mean(hypot2$coef), size=0.2)
+```
+
+Au vu des résultats, j'avoue avoir du mal à tirer des conclusions définitives sur ce jeu de données.
